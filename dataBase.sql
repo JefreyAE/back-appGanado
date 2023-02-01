@@ -12,7 +12,8 @@ email                   varchar(255) NOT NULL,
 password                varchar(255) NOT NULL,
 created_at              datetime DEFAULT NULL,
 updated_at              datetime DEFAULT NULL,
-remember_token         varchar(255),
+remember_token          varchar(255),
+validation_token        varchar(250),
 CONSTRAINT pk_users PRIMARY KEY(id)
 )ENGINE=InnoDb;
 
@@ -136,3 +137,5 @@ updated_at              datetime DEFAULT NULL,
 CONSTRAINT pk_notifications PRIMARY KEY(id),
 CONSTRAINT fk_user_notification FOREIGN KEY(user_id) REFERENCES users(id)
 )ENGINE=InnoDb;
+
+-- ALTER TABLE `users` ADD validation_token VARCHAR(250) AFTER remember_token;

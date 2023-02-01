@@ -4,67 +4,141 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 Use App\User;
+use App\Helpers\Enums;
+use App\Mail\ConfirmationEmail;
+use App\Helpers\Constants;
+use Mail; 
 
 class UserController extends Controller {
 
-    public function pruebas(Request $request) {
-        return "Accion de pruebas de UserController";
+    public function validateAccount(Request $request) {
+
+        $validation = $request->route('validation');
+        try {
+            $validate = \Validator::make(['validation' => $validation], [
+                    'validation' => 'required|regex:/^[a-zA-Z0-9\sÀ-ÿ\u00f1\u00d1]+$/u'
+            ]);
+        } catch (\Exception $e) {
+            $data = array(
+                'code' => 404,
+                'status' => 'error',
+                'message' => $e->getMessage()
+            );
+            return response()->json($data, $data['code']);
+        }
+        try {
+            /* Datos generales */
+            $user = User::where('validation_token', $validation)->first();
+
+            $enums = new Enums(); 
+            $constants = new Constants();
+            
+            if($user){
+                $user->state = $enums::UserState()['Active'];
+                $user->save();
+
+                return view('users.userValidated', ['url' => $constants->frontUrl()]);
+
+                $data = array(
+                    'code' => 200,
+                    'status' => 'success',
+                    'message' => 'Su cuenta a sido activada correctamente'
+                );  
+            }else{
+                $data = array(
+                    'code' => 500,
+                    'status' => 'error',
+                    'message' => 'El link de validación es inválido.'
+                );
+            }  
+        } catch (\Exception $e) {
+            $data = array(
+                'code' => 500,
+                'status' => 'error',
+                'message' => $e->getMessage()
+            );
+            return response()->json($data, $data['code']);
+        }
+
+        return response()->json($data, $data['code']);
     }
 
     public function register(Request $request) {
 
         //Recoger datos del usuario por post
-        $json = $request->input('json', null);
-        $params = json_decode($json);
-        $params_array = json_decode($json, true);
+        try{
+            $json = $request->input('json', null);
+            if (is_array($json)) {
+                $params = $json;
+                $params_array = $json;
+            } else {
+                $params = json_decode($json);
+                $params_array = json_decode($json, true);
+            }
 
-        if (!empty($params_array) && !empty($params)) {
-            //Validar los datos 
-            $validate = \Validator::make($params_array, [
-                        'name' => 'required|regex:/^[a-zA-Z0-9\sÀ-ÿ\u00f1\u00d1]+$/u',
-                        'surname' => 'required|regex:/^[a-zA-Z0-9\sÀ-ÿ\u00f1\u00d1]+$/u',
-                        'email' => 'required|email|unique:users',
-                        'password' => 'required',
-            ]);
+            if (!empty($params_array) && !empty($params)) {
+                //Validar los datos 
+                $validate = \Validator::make($params_array, [
+                            'name' => 'required|regex:/^[a-zA-Z0-9\sÀ-ÿ\u00f1\u00d1]+$/u',
+                            'surname' => 'required|regex:/^[a-zA-Z0-9\sÀ-ÿ\u00f1\u00d1]+$/u',
+                            'email' => 'required|email|unique:users',
+                            'password' => 'required',
+                ]);
 
-            //Limpiar blancos
-            $params_array = array_map('trim', $params_array);
+                //Limpiar blancos
+                $params_array = array_map('trim', $params_array);
 
-            if ($validate->fails()) {
+                $enums = new Enums();
+                $constants = new Constants();
+                
+                if ($validate->fails()) {
+                    $data = array(
+                        'status' => 'error',
+                        'code' => '400',
+                        'message' => 'Error al crear el usuario.',
+                        'errors' => $validate->errors()
+                    );
+                } else {
+                    //Cifrar la contraseña
+                    $pwd = hash('sha256', $params_array['password']);
+                    $validation_token = hash('sha256', $params_array['email']);
+
+                    //Crear el usuario
+                    $user = new User();
+                    $user->name = $params_array['name'];
+                    $user->surname = $params_array['surname'];
+                    $user->email = $params_array['email'];
+                    $user->role = 'ROLE_USER';
+                    $user->validation_token = $validation_token;
+                    $user->state = $enums::UserState()['Pending'];
+                    $user->password = $pwd;
+
+                    //Guardar el usuario
+                    $user->save();
+
+                    Mail::to($user->email)->send(new ConfirmationEmail($constants->apiUrl()."/api/user/".$validation_token));
+
+                    $data = array(
+                        'status' => 'success',
+                        'code' => '200',
+                        'message' => 'Usuario se ha creado correctamente. Por favor confirme su correo electronico.',
+                        'user' => $user
+                    );
+                }
+            } else {
                 $data = array(
                     'status' => 'error',
                     'code' => '400',
-                    'message' => 'Error al crear el usuario.',
-                    'errors' => $validate->errors()
-                );
-            } else {
-                //Cifrar la contraseña
-                $pwd = hash('sha256', $params_array['password']);
-
-                //Crear el usuario
-                $user = new User();
-                $user->name = $params_array['name'];
-                $user->surname = $params_array['surname'];
-                $user->email = $params_array['email'];
-                $user->role = 'ROLE_USER';
-                $user->password = $pwd;
-
-                //Guardar el usuario
-                $user->save();
-
-                $data = array(
-                    'status' => 'success',
-                    'code' => '200',
-                    'message' => 'Usuario se ha creado correctamente.',
-                    'user' => $user
+                    'message' => 'Los datos enviados no son correctos.',
                 );
             }
-        } else {
+        }catch(Exception $e){
             $data = array(
                 'status' => 'error',
-                'code' => '400',
-                'message' => 'Los datos enviados no son correctos.',
+                'code' => '500',
+                'message' => $e
             );
+            return Response()->json($data, $data['code']);
         }
 
         return Response()->json($data, $data['code']);
@@ -80,15 +154,9 @@ class UserController extends Controller {
         if (is_array($json)) {
             $params = $json;
             $params_array = $json;
-            $es = array(
-                'array' => 'si'
-            );
         } else {
             $params = json_decode($json);
             $params_array = json_decode($json, true);
-            $es = array(
-                'array' => 'no'
-            );
         }
 
         //Validar lo datos
@@ -109,12 +177,24 @@ class UserController extends Controller {
         } else {
             //Cifrar la contraseña
             $pwd = hash('sha256', $params_array['password']);
-            //Devolver token o datos
 
-            $signup = $jwtAuth->signup($params_array['email'], $pwd);
-            if (!empty($params->gettoken)) {
-                $signup = $jwtAuth->signup($params_array['email'], $pwd, true);
-            }
+            $user = User::where('email', $params_array['email'])->first();
+            $enums = new Enums();
+
+            $state = $user->state;
+            if($state != $enums::UserState()['Active']){
+                $signup = array(
+                    'status' => 'error',
+                    'code' => '400',
+                    'message' => 'Debe validar su correo electronico.'
+                );
+            }else{
+                 //Devolver token o datos  
+                $signup = $jwtAuth->signup($params_array['email'], $pwd);
+                if (!empty($params->gettoken)) {
+                    $signup = $jwtAuth->signup($params_array['email'], $pwd, true);
+                }
+            }        
         }
         return response()->json($signup, 200);
     }
@@ -137,15 +217,9 @@ class UserController extends Controller {
         if (is_array($json)) {
             $params = $json;
             $params_array = $json;
-            $es = array(
-                'array' => 'si'
-            );
         } else {
             $params = json_decode($json);
             $params_array = json_decode($json, true);
-            $es = array(
-                'array' => 'no'
-            );
         }
 
         if (!empty($params_array) && !empty($params)) {

@@ -5,6 +5,7 @@ namespace App\Helpers;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Config;
 use App\User;
 
 class JwtAuth {
@@ -12,7 +13,7 @@ class JwtAuth {
     public $key;
 
     public function __construct() {
-        $this->key = 'generando_una_clave_para_el_token';
+        $this->key = Config::get('app.token_key');
     }
 
     public function signup($email, $password, $getToken = null) {
