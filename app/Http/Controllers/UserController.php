@@ -108,7 +108,7 @@ class UserController extends Controller {
                     $user->name = $params_array['name'];
                     $user->surname = $params_array['surname'];
                     $user->email = $params_array['email'];
-                    $user->role = 'ROLE_USER';
+                    $user->role = 'DEMO';
                     $user->validation_token = $validation_token;
                     $user->state = $enums::UserState()['Pending'];
                     $user->password = $pwd;
@@ -132,11 +132,11 @@ class UserController extends Controller {
                     'message' => 'Los datos enviados no son correctos.',
                 );
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
             $data = array(
                 'status' => 'error',
                 'code' => '500',
-                'message' => $e
+                'message' => $e->getMessage()
             );
             return Response()->json($data, $data['code']);
         }

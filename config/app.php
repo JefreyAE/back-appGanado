@@ -15,7 +15,6 @@ return [
 
     'name' => env('APP_NAME', 'Registro_ganadero'),
     'token_key' => env('TOKEN_KEY'),
-
     /*
     |--------------------------------------------------------------------------
     | Application Environment
