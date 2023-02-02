@@ -121,7 +121,7 @@ class UserController extends Controller {
                     $data = array(
                         'status' => 'success',
                         'code' => '200',
-                        'message' => 'Usuario se ha creado correctamente. Por favor confirme su correo electronico.',
+                        'message' => 'Su cuenta se ha registrado correctamente. Por favor confirme su correo electrónico.',
                         'user' => $user
                     );
                 }
