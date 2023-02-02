@@ -19,7 +19,7 @@ Route::get('/api/animals/index','AnimalController@index')->middleware(ApiAuthMid
 Route::get('/api/animals/dead','AnimalController@dead')->middleware(ApiAuthMiddleware::class);
 Route::get('/api/animals/indexAll','AnimalController@indexAll')->middleware(ApiAuthMiddleware::class);
 Route::post('/api/animals/create','AnimalController@create')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class);
-Route::post('/api/animals/find','AnimalController@find')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class, AuthorizationMiddleware::class);
+Route::post('/api/animals/find','AnimalController@find')->middleware(ApiAuthMiddleware::class);
 Route::get('/api/animals/animal/detail/{id}','AnimalController@detail')->middleware(ApiAuthMiddleware::class);
 Route::get('/api/animals/animal/{id}','AnimalController@getAnimal')->middleware(ApiAuthMiddleware::class);
 Route::get('/api/animals/injectables/{id}','AnimalController@injectables')->middleware(ApiAuthMiddleware::class);
@@ -45,7 +45,7 @@ Route::delete('/api/incidents/incident/delete-one', 'IncidentController@deleteOn
 Route::get('/api/sales/index','SaleController@index')->middleware(ApiAuthMiddleware::class);
 Route::get('/api/sales/sale/{id}','SaleController@getSale')->middleware(ApiAuthMiddleware::class);
 Route::post('/api/sales/create','SaleController@create')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class);
-Route::post('/api/sales/find','SaleController@find')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class);
+Route::post('/api/sales/find','SaleController@find')->middleware(ApiAuthMiddleware::class);
 Route::delete('/api/sales/sale/delete-one', 'SaleController@deleteOne')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class);
 Route::put('/api/sales/update','SaleController@update')->middleware(ApiAuthMiddleware::class, AuthorizationMiddleware::class);
 
